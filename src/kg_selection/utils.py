@@ -572,7 +572,6 @@ def retrieve_evaluate(
     all_snippet_id,
     output_prediction_file,
     ori_file,
-    save_dir,
     topn,
     is_inference,
 ):
@@ -597,7 +596,7 @@ def retrieve_evaluate(
                     "snippet": this_snippet_id,
                 }
             )
-    p.dump(res_dialog, open(os.path.join(save_dir, "res_dialog.pkl"), "wb"))
+    # p.dump(res_dialog, open(os.path.join(save_dir, "res_dialog.pkl"), "wb"))
     with open(ori_file) as f:
         data_all = json.load(f)
 
@@ -697,7 +696,7 @@ def retrieve_evaluate(
     else:
         res = "finished"
 
-    return res
+    return res, res_dialog
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ from config import parameters as conf
 from torch import nn
 import torch
 import torch.optim as optim
-
+import pickle as p
 
 from model import Bert_model
 
@@ -35,9 +35,16 @@ os.makedirs(results_path, exist_ok=False)
 log_file = os.path.join(results_path, 'log.txt')
 test_feature_file = os.path.join(results_path, 'this_features.txt')
 
+data_type = "test"
+if data_type == "train":
+    input_path = conf.train_file
+elif data_type == "valid":
+    input_path = conf.valid_file
+elif data_type == "test":
+    input_path = conf.test_file
 
 test_data, test_examples = \
-    read_examples(input_path=conf.test_file, is_inference=True)
+    read_examples(input_path=input_path, is_inference=True)
 
 kwargs = {"examples": test_examples,
           "tokenizer": tokenizer,
@@ -105,11 +112,14 @@ def generate(data_ori, data, model, ksave_dir, mode='valid'):
                                           "predictions.json")
 
     if mode == "valid":
-        print_res = retrieve_evaluate(
+        print_res, res_dialog = retrieve_evaluate(
             all_logits, all_dialog_id, all_turn_id, all_snippet_id, output_prediction_file, conf.valid_file, topn=conf.topn, is_inference=True)
     else:
-        print_res = retrieve_evaluate(
+        print_res, res_dialog = retrieve_evaluate(
             all_logits, all_dialog_id, all_turn_id, all_snippet_id, output_prediction_file, conf.train_file, topn=conf.topn, is_inference=True)
+
+    # save the ranking index to aggregate relevant knowledge, output res_dialog_train/valid/test.pkl
+    p.dump(res_dialog, open(os.path.join(ksave_dir, "res_dialog_" + data_type +".pkl"), "wb"))
 
     write_log(log_file, print_res)
     print(print_res)

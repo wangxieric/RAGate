@@ -1,4 +1,8 @@
 # RAGate: Adaptive Retrieval-Augmented Generation for Conversational Systems
+<p align="center">
+  <img src="data/framework.png" width="500">
+</p>
+
 This repository includes the code and resources for our paper entitled "Adaptive Retrieval-Augmented Generation for Conversational Systems" for reproducible findings.
 <div align="center">
   

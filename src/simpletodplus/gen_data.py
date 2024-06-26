@@ -6,12 +6,12 @@ import copy
 import random
 import argparse
 
-root = "/data/users/zhiyuchen/todkg_dataset/runs/model1/"
-tgt = "/data/users/zhiyuchen/todkg_dataset/runs/model1/"
+root = "../../data/todkg_dataset/"
+tgt = "../../data/todkg_dataset/processed/"
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", default="train_final.json", type=str, required=False, help="data file name")
+    parser.add_argument("--data", default="train_retrieved.json", type=str, required=False, help="data file name")
     args = parser.parse_args()
 
 

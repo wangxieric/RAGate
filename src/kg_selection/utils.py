@@ -8,15 +8,15 @@ import time
 
 from config import parameters as conf
 from tqdm import tqdm
-
+import pickle as p
 # Progress bar
 
 TOTAL_BAR_LENGTH = 100.0
 last_time = time.time()
 begin_time = last_time
-print(os.popen("stty size", "r").read())
-_, term_width = os.popen("stty size", "r").read().split()
-term_width = int(term_width)
+# print(os.popen("stty size", "r").read())
+# _, term_width = os.popen("stty size", "r").read().split()
+term_width = 80
 
 
 
@@ -219,6 +219,9 @@ def read_examples(input_path, is_inference):
                     else:
                         if "tillaction_pred" in turn:
                             this_context = turn["tillaction_pred"]
+                    
+                    prev_user_turn_utter = each_data["turns"][ind-1]["utterance"]
+                    all_utter = prev_user_turn_utter + turn["utterance"]
 
                     this_pos_snippets = []
                     this_neg_snippets = []
@@ -239,8 +242,8 @@ def read_examples(input_path, is_inference):
                                             ]
                                         )
                             # negative turns
-                            if not turn["enrich"]:
-                                all_snippets = all_snippets[: conf.generate_all_neg_max]
+                            # if not turn["enrich"]:
+                            #     all_snippets = all_snippets[: conf.generate_all_neg_max]
                         else:
                             for each_query in turn["entity_passages_sents_pred"]:
                                 for each_passage in turn["entity_passages_sents_pred"][
@@ -260,6 +263,7 @@ def read_examples(input_path, is_inference):
                                 "dialog_id": this_dialog_id,
                                 "turn_id": this_turn_id,
                                 "context": this_context,
+                                "all_utterance": all_utter,
                                 "pos_snippets": this_pos_snippets,
                                 "neg_snippets": this_neg_snippets,
                                 "all_snippets": all_snippets,
@@ -284,6 +288,7 @@ def read_examples(input_path, is_inference):
                                 "dialog_id": this_dialog_id,
                                 "turn_id": this_turn_id,
                                 "context": this_context,
+                                "all_utterance": all_utter,
                                 "pos_snippets": this_pos_snippets,
                                 "neg_snippets": this_neg_snippets,
                                 "all_snippets": all_snippets,
@@ -356,6 +361,8 @@ def convert_single_example(
     all_features = []
 
     context = example["context"]
+    # all_utterance = example["all_utterance"]
+    all_utterance = context
 
     # print("###### question ######")
     # print(question)
@@ -370,7 +377,7 @@ def convert_single_example(
             each_pos_snippet = tmp[1]
             this_input_feature = wrap_single_pair(
                 tokenizer,
-                context,
+                all_utterance, # or context with the labelled information
                 each_pos_snippet,
                 1,
                 max_seq_length,
@@ -388,7 +395,7 @@ def convert_single_example(
             each_neg_snippet = tmp[1]
             this_input_feature = wrap_single_pair(
                 tokenizer,
-                context,
+                all_utterance, # or context with the labelled information
                 each_neg_snippet,
                 0,
                 max_seq_length,
@@ -407,7 +414,7 @@ def convert_single_example(
             each_snippet = tmp[1]
             this_input_feature = wrap_single_pair(
                 tokenizer,
-                context,
+                all_utterance, # or context with the labelled information
                 each_snippet,
                 0,
                 max_seq_length,
@@ -434,7 +441,7 @@ def convert_examples_to_features(
     res = []
     res_neg = []
     res_all = []
-    for (_, example) in tqdm(enumerate(examples)):
+    for (_, example) in enumerate(examples):
         features, features_neg, features_all = convert_single_example(
             example=example,
             tokenizer=tokenizer,
@@ -460,7 +467,7 @@ def write_predictions(all_predictions, output_prediction_file):
 
 
 class DataLoader:
-    def __init__(self, is_training, data, batch_size=32, shuffle=True):
+    def __init__(self, is_training, data, batch_size=256, shuffle=True):
         """
         Main dataloader
         """
@@ -486,7 +493,7 @@ class DataLoader:
             if self.data_size % batch_size == 0
             else int(self.data_size / batch_size) + 1
         )
-
+        print("total data: ", self.data_size)
         # print(self.num_batches)
 
         self.count = 0
@@ -565,6 +572,7 @@ def retrieve_evaluate(
     all_snippet_id,
     output_prediction_file,
     ori_file,
+    save_dir,
     topn,
     is_inference,
 ):
@@ -589,7 +597,7 @@ def retrieve_evaluate(
                     "snippet": this_snippet_id,
                 }
             )
-
+    p.dump(res_dialog, open(os.path.join(save_dir, "res_dialog.pkl"), "wb"))
     with open(ori_file) as f:
         data_all = json.load(f)
 
@@ -656,7 +664,7 @@ def retrieve_evaluate(
 
                     else:
                         this_ind = data["dialogue_id"] + "_" + str(ind // 2)
-
+                        print("this_ind: ",this_ind)
                         # some turns have no retrieved results
                         retrieved_snippets = []
                         if this_ind in res_dialog:
@@ -665,20 +673,22 @@ def retrieve_evaluate(
                             sorted_dict = sorted(
                                 this_res, key=lambda kv: kv["score"], reverse=True
                             )
-
+                            if len(this_res) == 0:
+                                print("no results: ", this_ind)
                             for tmp in sorted_dict[:topn]:
                                 # if tmp["score"] >= conf.thresh:
                                 retrieved_snippets.append(tmp["snippet"])
 
                         else:
-                            print(this_ind)
+                            print("not in res_dialog", this_ind)
 
                         if len(retrieved_snippets) == 0:
                             retrieved_snippets.append(0)
                         turn["retrieved"] = retrieved_snippets
-
-    with open(output_prediction_file, "w") as f:
-        json.dump(data_all, f, indent=4)
+        break
+    
+    # with open(output_prediction_file, "w") as f:
+    #     json.dump(data_all, f, indent=4)
 
     if not is_inference:
         res_3 = all_recall_3 / all_kg_chitchat
@@ -692,7 +702,7 @@ def retrieve_evaluate(
 
 if __name__ == "__main__":
 
-    root_path = "/mnt/george_bhd/zhiyuchen/"
+    root_path = "../data/"
     outputs = root_path + "outputs/"
 
     json_in = (

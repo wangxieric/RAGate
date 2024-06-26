@@ -85,9 +85,9 @@ if __name__ == '__main__':
 
     sgd = root + "SGD/"
 
-    train_final = ketod_release + "train.json"
-    dev_final = ketod_release + "dev.json"
-    test_final = ketod_release + "test.json"
+    train_final = root + "ketod/" + "train.json"
+    dev_final = root + "ketod/" + "dev.json"
+    test_final = root + "ketod/" + "test.json"
 
     # generate ketod dataset
     gen_ketod(ketod_release_train_splits, sgd, train_final, mode="train")

@@ -4,20 +4,20 @@ class parameters():
 
     prog_name = "retriever"
     # using original_data_unitable
-    root_path = "/data/users/zhiyuchen/todkg_dataset/runs/kg_select/"
-    output_path = "/data/users/zhiyuchen/outputs/"
-    cache_dir = "/data/users/zhiyuchen/tmp/"
+    root_path = "../../data/ketod/"
+    output_path = "../../outputs/kg_select/"
+    cache_dir = "../../data/tmp/"
 
-    model_save_name = "kg_select_bert_base_model2_new"
+    model_save_name = "kg_select_bert_base_model"
 
-    train_file = root_path + "processed_kg_select_train_final.json"
-    valid_file = root_path + "processed_kg_select_dev_final.json"
+    train_file = root_path + "processed_kg_select_train.json"
+    valid_file = root_path + "processed_kg_select_dev.json"
 
-    simpletod_path = "/data/users/zhiyuchen/todkg_dataset/runs/model2_new/"
+    simpletod_path = "../../output/runs/model2_new/"
     # # test_file = root_path + "dataset/test.json"
     # # test_file = root_path + "dataset/train.json"
-    test_file = simpletod_path + "test_all_inter.json"
-    # test_file = root_path + "processed_kg_select_dev_final.json"
+    # test_file = simpletod_path + "test_all_inter.json"
+    test_file = root_path + "processed_kg_select_test.json"
 
     # model choice: bert, roberta, albert
     pretrained_model = "bert"
@@ -30,7 +30,7 @@ class parameters():
     device = "cuda"
     mode = "train"
     resume_model_path = ""
-    saved_model_path = output_path + "kg_select_bert_base_20210817231802/saved_model/loads/5/model.pt"
+    saved_model_path = output_path + "kg_select_bert_base_model/saved_model/model.pt"
     build_summary = False
 
     option = "rand"
@@ -39,9 +39,9 @@ class parameters():
 
     # threshold for select snippets
     thresh = 0.5
-    tillaction_gold = False
+    tillaction_gold = True
     generate_all = True
-    if_fill_train = False
+    if_fill_train = True
     generate_all_neg_max = 30
 
     sep_attention = True

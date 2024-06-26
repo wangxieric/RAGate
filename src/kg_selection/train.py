@@ -15,7 +15,7 @@ import torch
 import torch.optim as optim
 
 
-from Model import Bert_model
+from kg_selection.model import Bert_model
 
 if conf.pretrained_model == "bert":
     from transformers import BertTokenizer

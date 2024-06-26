@@ -7,12 +7,11 @@ import copy
 import random
 import argparse
 
-root = "/data/users/zhiyuchen/todkg_dataset/processed/"
-tgt = "/data/users/zhiyuchen/todkg_dataset/runs/kg_select/"
+root = "../../data/ketod/"
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", default="train_final.json", type=str, required=False, help="data file name")
+    parser.add_argument("--data", default="train.json", type=str, required=False, help="data file name")
     args = parser.parse_args()
 
 
@@ -123,7 +122,7 @@ def main():
 
         i += 1
 
-    with open(tgt + "/processed_kg_select_" + args.data, "w") as f:
+    with open(root + "/processed_kg_select_" + args.data, "w") as f:
         json.dump(data, f, indent=1)
 
 if __name__ == '__main__':

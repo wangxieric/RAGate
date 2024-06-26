@@ -56,24 +56,26 @@ def merge_train(json_in, json_out, topn_snippets=3, is_test=True):
 
 
 
-root = "/data/users/zhiyuchen/outputs/"
-tgt = "/data/users/zhiyuchen/todkg_dataset/runs/"
+root = "../../outputs/"
+tgt = "../../data/todkg_dataset/"
+
+# update the following directories to the correct paths of predictions
 
 # # train
 # json_in = root + "inference_only_20210818034712_kg_select_bert_base_train/results/test/predictions.json"
-# json_out = tgt + "model1/" + "train_final.json"
+# json_out = tgt + "train_retrieved.json"
 
 # merge_train(json_in, json_out, topn_snippets=3, is_test=False)
 
 # # dev
 # json_in = root + "inference_only_20210818034804_kg_select_bert_base_dev/results/test/predictions.json"
-# json_out = tgt + "model1/" + "dev_final.json"
+# json_out = tgt + "dev_retrieved.json"
 
 # merge_train(json_in, json_out, topn_snippets=3, is_test=False)
 
 
 # test
 json_in = root + "inference_only_20210818034853_kg_select_bert_base_test/results/test/predictions.json"
-json_out = tgt + "model1/" + "test_retrieved.json"
+json_out = tgt + "test_retrieved.json"
 
 merge_train(json_in, json_out, topn_snippets=3, is_test=True)

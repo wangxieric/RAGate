@@ -124,6 +124,7 @@ write_log(log_file, "#######################################################")
 def decode_seq(prompts, eos_token_id):
     # eos_token_id as list
     ret = []
+    min_logits = []
     with torch.no_grad():
         for batch in tqdm(range(num_batch)):
 
@@ -193,7 +194,9 @@ def decode_seq(prompts, eos_token_id):
             # ret += [tokenizer.decode(output, skip_special_tokens=False, clean_up_tokenization_spaces=True).replace("<|endoftext|>", "") for output in generated]
 
 
+            max_logits = []
             for step in range(num_tokens_to_produce):
+                # print(next(model.parameters()).device)
                 outputs = model(input_ids, attention_mask=attn_mask, position_ids=position_ids)
 
                 if step == 0:
@@ -202,6 +205,10 @@ def decode_seq(prompts, eos_token_id):
                     next_token_logits = outputs[0][:, -1, :]
 
                 next_tokens = torch.argmax(next_token_logits, dim=-1)
+                
+                # track the logits of the selected tokens
+                token_logit = next_token_logits[0][next_tokens[0]].detach().item()
+                max_logits.append(token_logit)
 
                 eos_not_in_sents.mul_(next_tokens.ne(eos_token_id).long())
 
@@ -214,10 +221,10 @@ def decode_seq(prompts, eos_token_id):
                 if torch.max(eos_not_in_sents) == 0:
                     break
 
-
             ret += [tokenizer.decode(output, skip_special_tokens=False, clean_up_tokenization_spaces=True).replace("<|endoftext|>", "") for output in input_ids]
+            min_logits.append(min(max_logits))
 
-    return ret
+    return ret, min_logits
 
 
 # step 1: decode belief state
@@ -455,6 +462,107 @@ def add_selected_kg():
         json.dump(res, f, indent=4)
 
 
+# step 4 (alternate): add knowledge if predicted enrich
+def add_selected_kg_if_pred():
+    
+    with open(result_file_action, "r") as f:
+        prompts_action = json.load(f)
+    
+    # This would require to update the args.test_inter_res with the predicted retrieved snippets
+    with open(args.test_inter_res, "r") as f:
+        data_all = json.load(f)
+    
+    res = []
+    ind = 0
+    count = 0
+
+    # sample n index from a range
+    # n = 787 
+    # import random
+    # random.seed(42)
+    # sample_indices = random.sample(range(4964), n)
+
+    for each_data in data_all:
+        for turn in each_data["turns"]:
+            if turn["speaker"] == "SYSTEM":
+                this_pre_gen = prompts_action[ind]
+                ind += 1
+                this_kg_text = ''
+
+                # an alternative of using random turns to augment
+                # if ind in sample_indices:
+                #     this_kg_text = " ".join(turn['retrieved_snippets'][:3])
+                
+                if turn['enrich']:
+                    count += 1
+                    
+                    # use the least relevant retrieved snippet 
+                    # this_kg_text = turn['retrieved_snippets'][-1]
+                    
+                    # use the most relevant retrieved snippet 
+                    # this_kg_text = turn['retrieved_snippets'][0]
+
+                    # use the top 3 retrieved snippets
+                    this_kg_text = " ".join(turn['retrieved_snippets'][:3])
+                    
+                    # use tf-idf retrieved snippets
+                    # this_kg_text = " ".join(turn['tfidf_retrieved_snippets'][:3])
+                res.append(this_pre_gen + ' <|knowledge|> ' + this_kg_text + ' <|endofknowledge|>')
+    
+    print("count: ", count) # get the number of turns that are predicted to be enriched 
+    assert ind == len(prompts_action)
+    with open(result_file_knowledge, "w") as f:
+        json.dump(res, f, indent=4)
+
+
+# step 4 (alternate): add selected golden knowledge
+def add_gold_selected_kg():
+
+
+    with open(result_file_action, "r") as f:
+        prompts_action = json.load(f)
+
+    with open(args.test_inter_res, "r") as f:
+        data_all = json.load(f)
+
+
+    res = []
+    ind = 0
+    count = 0 
+    for each_data in data_all:
+        for turn in each_data["turns"]:
+            if turn["speaker"] == "SYSTEM":
+                this_pre_gen = prompts_action[ind]
+                ind += 1
+
+                selected_kg_snippets = turn["retrieved"]
+                this_kg_text = []
+                
+                identify_relevant_kg = False
+                for each_query in turn["entity_passages_sents_pred"]:
+                    for each_passage in turn["entity_passages_sents_pred"][each_query]:
+                        passage_title = each_passage[0]
+
+                        for each_snippet in each_passage[1:]:
+                            # only use the selected snippets that are also relevant as per the ground-truth
+                            if "kg_snippets" in turn:
+                                relevant_kg_snippets = turn["kg_snippets"]
+                                if int(each_snippet[0]) in selected_kg_snippets:
+                                    this_kg_text.append(passage_title + " " + each_snippet[1])
+                                    if int(each_snippet[0]) in relevant_kg_snippets:
+                                        identify_relevant_kg = True
+                if identify_relevant_kg:
+                    count += 1
+                    res.append(this_pre_gen + ' <|knowledge|> ' + " ".join(this_kg_text) + ' <|endofknowledge|>')
+                else:
+                    res.append(this_pre_gen + ' <|knowledge|> ' + ' <|endofknowledge|>')
+
+
+    assert ind == len(prompts_action)
+    print("count: ", count)
+    with open(result_file_knowledge, "w") as f:
+        json.dump(res, f, indent=4)
+
 
 # step 5: gen response
 def gen_response():
@@ -492,28 +600,33 @@ def gen_response():
 
 
 # step 5: gen response
-def gen_response_retrieved_kg_gold_decision():
+def gen_response():
 
-    with open(args.test_oracle_input) as f:
-        prompts_gold = f.read().strip().split("\n")
-    with open(args.test_input_gold_kg) as f:
-        prompts_kg = f.read().strip().split("\n")
+    if args.gold_kg:
+        with open(args.test_input_gold_kg) as f:
+            prompts_action = f.read().strip().split("\n")
+            print(len(prompts_action))
 
-    inputs = []
-    for gold, kg in zip(prompts_gold, prompts_kg):
-        this_decision = gold.split('<|endofknowledge|>')[1].strip().split('<|response|>')[0].strip()
-        inputs.append(" ".join([kg, this_decision]))
+    elif args.gold_decision:
+        with open(args.test_input_gold_decision) as f:
+            prompts_action = f.read().strip().split("\n")
+            print(len(prompts_action))
+
+    else:
+        with open(result_file_knowledge) as f:
+            prompts_action = json.load(f)
 
 
     # with open(result_file_knowledge, "r") as f:
     #     prompts_action = json.load(f)
 
     response_eos = tokenizer.encode('<|endofresponse|>')[0]
-    decode_response = decode_seq(inputs, eos_token_id = response_eos)
+    decode_response, min_logits = decode_seq(prompts_action, eos_token_id = response_eos)
     response_res = []
-    for row in decode_response:
+    for idx, row in enumerate(decode_response):
         row = row.replace(" <PAD>", "")
         row = row.strip() + ' <|endofresponse|>'
+        row += " <|minlogit|> " + str(min_logits[idx])
         response_res.append(row)
 
     with open(result_file_final, "w") as f:
@@ -536,6 +649,10 @@ def gen_response_retrieved_kg_gold_decision():
 
 # # step 4:
 # add_selected_kg()
+
+# # alternatives to step 4
+# add_selected_kg_if_pred() # add selected kg if predicted enrich
+# add_gold_selected_kg() # add gold selected kg
 
 # # step 5:
 # gen_response()

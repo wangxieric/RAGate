@@ -68,7 +68,7 @@ RAGate-llama (ctx-(syn-resp)-ner-know) | [XiWangEric/IfAug_classification_contex
 RAGate-llama (ctx-(syn-resp)-ner-source) | [XiWangEric/IfAug_classification_context_system_syn_res_ner_know_source_input_llama2_7b](https://huggingface.co/XiWangEric/IfAug_classification_context_system_syn_res_ner_know_source_input_llama2_7b)
 RAGate-llama (ctx-(syn-resp)) | [XiWangEric/IfAug_classification_system_context_syn_res_input_llama2_7b](https://huggingface.co/XiWangEric/IfAug_classification_system_context_syn_res_input_llama2_7b)
 RAGate-llama (ctx-only) | [XiWangEric/IfAug_classification_system_context_input_llama2_7b](https://huggingface.co/XiWangEric/IfAug_classification_system_context_input_llama2_7b)
-
+RAGate-MHA (ctx-only) | [checkpoint](https://drive.google.com/file/d/1WdEXp1rHl2zyG8CmOwLxE4ViP4v8d6lF/view?usp=drive_link)
 
 
 

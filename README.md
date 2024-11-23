@@ -59,7 +59,7 @@ Then, the development and evaluation of RAGate variants can be accessed in the s
 - Then, RAGate-MHA.py and RAGate-llama.py are used to generate predictions.
 - The _src/RAGate/result_analysis_ includes files about various evaluation aspects.
 
-We also release the checkpoints for trained RAGate-MHA and RAGate-llama via download checkpoints or access via huggingface.
+<!-- We also release the checkpoints for trained RAGate-MHA and RAGate-llama via download checkpoints or access via huggingface.
 
 RAGate Variant | Link 
 --- | ---
@@ -69,7 +69,7 @@ RAGate-llama (ctx-(syn-resp)-ner-source) | [XiWangEric/IfAug_classification_cont
 RAGate-llama (ctx-(syn-resp)) | [XiWangEric/IfAug_classification_system_context_syn_res_input_llama2_7b](https://huggingface.co/XiWangEric/IfAug_classification_system_context_syn_res_input_llama2_7b)
 RAGate-llama (ctx-only) | [XiWangEric/IfAug_classification_system_context_input_llama2_7b](https://huggingface.co/XiWangEric/IfAug_classification_system_context_input_llama2_7b)
 RAGate-MHA (ctx-only) | [checkpoint](https://drive.google.com/file/d/1WdEXp1rHl2zyG8CmOwLxE4ViP4v8d6lF/view?usp=drive_link)
-
+--!>
 
 
 
